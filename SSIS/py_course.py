@@ -37,3 +37,11 @@ class CourseCSV:
             for row in reader:
                 if row[0] == course_code:
                     self.valid = True
+                    
+    def is_duplicate_course(self, course_code):
+        with open(self.filename, mode='r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row['Course_Code'] == course_code:
+                    return True
+        return False
