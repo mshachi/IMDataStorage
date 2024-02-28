@@ -1,9 +1,71 @@
 import csv
+from PyQt5 import QtWidgets, uic
+import sys
 import os.path
 import py_course as cr
 
 # fieldnames/column names for csv file
 fieldnames = ['Student_ID', 'Name', 'Age', 'Gender', 'Course', 'Year_Level']
+filename = "student_csv.csv"
+
+class Ui(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(Ui, self).__init__()
+        uic.loadUi('mainwindow_ui.ui', self)
+        self.show()
+
+        self.addStudent = self.findChild(QtWidgets.QPushButton, 'addStudent')
+        self.addStudent.clicked.connect(self.open_add_student_dialog)
+
+    def open_add_student_dialog(self):
+        self.add_student_dialog = AddStudentDialog()
+        self.add_student_dialog.exec_()
+
+
+class AddStudentDialog(QtWidgets.QDialog):
+    def __init__(self):
+        super(AddStudentDialog, self).__init__()
+        uic.loadUi('addstudent_ui.ui', self)
+        self.student = {}
+        self.load_course_codes()
+        self.name = self.addNameField.text()
+        self.studentID = self.addIDNumField.text()
+        self.course = self.get_course()
+        self.age = str(self.ageSpinBox.value())
+        self.yearLevel = str(self.yearSpinBox.value())
+        self.gender = self.get_gender()
+
+        self.add = self.findChild(QtWidgets.QPushButton, 'addStudent_confirm')
+        self.add.clicked.connect(self.add_student())
+        self.cancelAdd.clicked.connect(self.reject)
+
+    def add_student(self):
+        self.student[self.studentID] = {'Student_ID': self.studentID, 'Name': self.name, 'Age': self.age,
+                                   'Gender': self.gender, 'Course': self.course, 'Year_Level': self.yearLevel}
+
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for student in self.student.values():
+                writer.writerow(student)
+
+    def get_course(self):
+        return self.courseComboBox.currentText()
+
+    def load_course_codes(self):
+        course_filename = "course_csv.csv"
+        if os.path.exists(course_filename):
+            with open(course_filename, mode='r') as file:
+                reader = csv.reader(file)
+                next(reader)
+                course_codes = [row[0] for row in reader]
+                self.courseComboBox.addItems(course_codes)
+
+    def get_gender(self):
+        if self.genderBox.maleRadBut.isChecked():
+            return "Male"
+        elif self.genderBox.femaleRadBut.isChecked():
+            return "Female"
 
 
 # Student Information Management System class
@@ -12,10 +74,6 @@ class StudentSystem:
         self.student = {}
 
     # function to create a new student record and add it to a dictionary
-    def create_student(self, student_id, name, age, gender, course, year):
-        self.student[student_id] = {'Student_ID': student_id, 'Name': name, 'Age': age,
-                                    'Gender': gender, 'Course': course, 'Year_Level': year}
-        print("Student added successfully.")
 
     # function to read student info (from the dictionary loaded from the csv file)
     def read_student(self, student_id):
@@ -74,10 +132,13 @@ class StudentSystem:
 
 # main function
 def main():
-    sys = StudentSystem()
+    sis = StudentSystem()
+    app = QtWidgets.QApplication(sys.argv)
+    window = Ui()
+    app.exec_()
     filename = "student_csv.csv"
     course_filename = "course_csv.csv"
-    sys.load_csvfile(filename)
+    sis.load_csvfile(filename)
     course_check = cr.CourseCSV(course_filename)
 
     while True:
@@ -95,7 +156,7 @@ def main():
 
         if choice == "1":
             student_id = input("Enter Student ID: ")
-            if student_id in sys.student:
+            if student_id in sis.student:
                 print(f"Student {student_id} already exists.")
             else:
                 name = input("Enter Name: ")
@@ -104,29 +165,29 @@ def main():
                 year_level = input("Enter Year Level: ")
                 course = input("Enter Course: ")
                 if not course_check.valid_course(course):
-                    sys.create_student(student_id, name, age, gender, "N/A", year_level)
+                    sis.create_student(student_id, name, age, gender, "N/A", year_level)
                 else:
-                    sys.create_student(student_id, name, age, gender, course, year_level)
+                    sis.create_student(student_id, name, age, gender, course, year_level)
 
         elif choice == "2":
             student_id = input("Enter Student ID: ")
-            sys.read_student(student_id)
+            sis.read_student(student_id)
 
         elif choice == "3":
             student_id = input("Enter Student ID: ")
             year = input("Enter Year Level: ")
             course = input("Enter new course: ")
-            sys.update_student(student_id, year, course)
+            sis.update_student(student_id, year, course)
             print("Student information updated successfully.")
 
         elif choice == "4":
             student_id = input("Enter Student ID: ")
-            sys.delete_student(student_id)
+            sis.delete_student(student_id)
             print("Student information deleted successfully.")
 
         elif choice == "5":
             print("List of students: ")
-            sys.list_students()
+            sis.list_students()
 
         elif choice == "6":
             course_code = input("Enter Course Code: ")
@@ -155,7 +216,7 @@ def main():
         else:
             print("Please enter a valid choice.")
 
-        sys.update_csvfile(filename)
+        sis.update_csvfile(filename)
 
 
 if __name__ == "__main__":
