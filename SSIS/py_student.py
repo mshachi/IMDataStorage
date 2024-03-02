@@ -2,52 +2,104 @@ import csv
 from PyQt5 import QtWidgets, uic
 import sys
 import os.path
+from PyQt5.QtWidgets import QDialog, QMessageBox
 import py_course as cr
 
 # fieldnames/column names for csv file
-fieldnames = ['Student_ID', 'Name', 'Age', 'Gender', 'Course', 'Year_Level']
+student_fieldnames = ['Student_ID', 'Name', 'Age', 'Gender', 'Course', 'Year_Level']
+course_fieldnames = ['Course_Code', 'Course_Name']
 filename = "student_csv.csv"
+student = {}
+
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
         uic.loadUi('mainwindow_ui.ui', self)
         self.show()
-
+        self.load_csvfile(filename)
         self.addStudent = self.findChild(QtWidgets.QPushButton, 'addStudent')
         self.addStudent.clicked.connect(self.open_add_student_dialog)
+        self.deleteStudent = self.findChild(QtWidgets.QPushButton, 'deleteStudent')
+        self.deleteStudent.clicked.connect(self.open_delete_student_dialog)
+        self.refreshButton = self.findChild(QtWidgets.QPushButton, 'reloadButton')
+        self.refreshButton.clicked.connect(self.refresh_student_tree)
+        self.studentTree = self.findChild(QtWidgets.QTreeWidget, 'studentTree')
 
     def open_add_student_dialog(self):
-        self.add_student_dialog = AddStudentDialog()
+        self.add_student_dialog = AddStudentDialog(self)
+        self.add_student_dialog.accepted.connect(self.refresh_student_tree)
         self.add_student_dialog.exec_()
+
+    def open_delete_student_dialog(self):
+        self.delete_student_dialog = DeleteStudentDialog(self)
+        self.delete_student_dialog.accepted.connect(self.refresh_student_tree)
+        self.delete_student_dialog.exec_()
+
+    def load_csvfile(self, filename):
+        global student
+        if os.path.exists(filename):
+            with open(filename, mode='r') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    student[row["Student_ID"]] = row
+                    self.add_student_to_tree(row)
+        else:
+            with open(filename, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(student_fieldnames)
+
+    def update_csvfile(self, filename):
+        global student
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=student_fieldnames)
+            writer.writeheader()
+            for student_data in student.values():
+                writer.writerow(student_data)
+
+    def add_student_to_tree(self, student_data):
+        item = QtWidgets.QTreeWidgetItem(self.studentTree)
+        item.setText(0, student_data['Student_ID'])
+        item.setText(1, student_data['Name'])
+        item.setText(2, student_data['Age'])
+        item.setText(3, student_data['Gender'])
+        item.setText(4, student_data['Course'])
+        item.setText(5, student_data['Year_Level'])
+
+    def refresh_student_tree(self):
+        self.studentTree.clear()
+        self.load_csvfile(filename)
 
 
 class AddStudentDialog(QtWidgets.QDialog):
-    def __init__(self):
-        super(AddStudentDialog, self).__init__()
+    def __init__(self, parent):
+        super(AddStudentDialog, self).__init__(parent)
         uic.loadUi('addstudent_ui.ui', self)
-        self.student = {}
+        self.parent = parent
         self.load_course_codes()
-        self.name = self.addNameField.text()
-        self.studentID = self.addIDNumField.text()
-        self.course = self.get_course()
-        self.age = str(self.ageSpinBox.value())
-        self.yearLevel = str(self.yearSpinBox.value())
-        self.gender = self.get_gender()
-
         self.add = self.findChild(QtWidgets.QPushButton, 'addStudent_confirm')
-        self.add.clicked.connect(self.add_student())
+        self.add.clicked.connect(self.add_student)
         self.cancelAdd.clicked.connect(self.reject)
 
     def add_student(self):
-        self.student[self.studentID] = {'Student_ID': self.studentID, 'Name': self.name, 'Age': self.age,
-                                   'Gender': self.gender, 'Course': self.course, 'Year_Level': self.yearLevel}
+        global student
+        studentID = self.addIDNumField.text()
+        name = self.addNameField.text()
+        age = str(self.ageSpinBox.value())
+        gender = self.get_gender()
+        course = self.get_course()
+        yearLevel = str(self.yearSpinBox.value())
 
-        with open(filename, 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            for student in self.student.values():
-                writer.writerow(student)
+        if studentID in student:
+            QtWidgets.QMessageBox.warning(self, "Duplicate Student ID", f"Student with ID {studentID} already exists.")
+            return
+
+        student_data = {'Student_ID': studentID, 'Name': name, 'Age': age,
+                        'Gender': gender, 'Course': course, 'Year_Level': yearLevel}
+
+        student[studentID] = student_data
+        self.parent.update_csvfile(filename)
+        self.accept()
 
     def get_course(self):
         return self.courseComboBox.currentText()
@@ -62,162 +114,45 @@ class AddStudentDialog(QtWidgets.QDialog):
                 self.courseComboBox.addItems(course_codes)
 
     def get_gender(self):
-        if self.genderBox.maleRadBut.isChecked():
+        if self.maleRadBut.isChecked():
             return "Male"
-        elif self.genderBox.femaleRadBut.isChecked():
+        elif self.femaleRadBut.isChecked():
             return "Female"
-
-
-# Student Information Management System class
-class StudentSystem:
-    def __init__(self):
-        self.student = {}
-
-    # function to create a new student record and add it to a dictionary
-
-    # function to read student info (from the dictionary loaded from the csv file)
-    def read_student(self, student_id):
-        if student_id in self.student:
-            student = self.student[student_id]
-            print(f"Student ID: {student['Student_ID']}")
-            print(f"Name: {student['Name']}")
-            print(f"Age: {student['Age']}")
-            print(f"Gender: {student['Gender']}")
-            print(f"Course: {student['Course']}")
-            print(f"Year Level: {student['Year_Level']}")
         else:
-            print(f"Student {student_id} does not exist")
-
-    # function to update student info
-    def update_student(self, student_id, year, course):
-        if student_id in self.student:
-            self.student[student_id]['Year_Level'] = year
-            self.student[student_id]['Course'] = course
-        else:
-            print(f"Student {student_id} does not exist.")
-
-    # function to delete student info
-    def delete_student(self, student_id):
-        if student_id in self.student:
-            del self.student[student_id]
-        else:
-            print(f"Student {student_id} does not exist.")
-
-    # function to list student info
-    def list_students(self):
-        for student_id, student in self.student.items():
-            print(f"Student ID: {student['Student_ID']}, Name: {student['Name']}, Age: {student['Age']}, "
-                  f"Gender: {student['Gender']}, Year Level: {student['Year_Level']}, Course: {student['Course']}")
-
-    # function to update a csv file
-    def update_csvfile(self, filename):
-        with open(filename, 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            for student in self.student.values():
-                writer.writerow(student)
-
-    # function to load csv file
-    def load_csvfile(self, filename):
-        if os.path.exists(filename):
-            with open(filename, mode='r') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    self.student[row["Student_ID"]] = row
-        else:
-            with open(filename, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(fieldnames)
+            print("Error: No gender selected.")
+            return ""
 
 
-# main function
-def main():
-    sis = StudentSystem()
-    app = QtWidgets.QApplication(sys.argv)
-    window = Ui()
-    app.exec_()
-    filename = "student_csv.csv"
-    course_filename = "course_csv.csv"
-    sis.load_csvfile(filename)
-    course_check = cr.CourseCSV(course_filename)
+class DeleteStudentDialog(QtWidgets.QDialog):
+    def __init__(self, parent):
+        super(DeleteStudentDialog, self).__init__(parent)
+        uic.loadUi('deletestudent_ui.ui', self)
+        self.parent = parent
+        self.confirmButton = self.findChild(QtWidgets.QPushButton, 'deleteStudentConfirm')
+        self.cancelButton = self.findChild(QtWidgets.QPushButton, 'cancelDelete')
+        self.confirmButton.clicked.connect(self.confirm_delete)
+        self.cancelButton.clicked.connect(self.reject)
 
-    while True:
-        print("--Student Information System--")
-        print("1. Add Student")
-        print("2. View Student")
-        print("3. Update Student")
-        print("4. Delete Student")
-        print("5. List All Students")
-        print("6. Add Course")
-        print("7. Delete Course")
-        print("8. Exit")
+    def confirm_delete(self):
+        global student
+        studentID = self.delIDNumField.text()
 
-        choice = input("Enter your choice: ")
+        if studentID in student:
+            confirm = QtWidgets.QMessageBox.question(self, 'Confirm Deletion',
+                                                     f"Do you want to delete Student {studentID}?",
+                                                     QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
 
-        if choice == "1":
-            student_id = input("Enter Student ID: ")
-            if student_id in sis.student:
-                print(f"Student {student_id} already exists.")
-            else:
-                name = input("Enter Name: ")
-                age = input("Enter Age: ")
-                gender = input("Enter Gender: ")
-                year_level = input("Enter Year Level: ")
-                course = input("Enter Course: ")
-                if not course_check.valid_course(course):
-                    sis.create_student(student_id, name, age, gender, "N/A", year_level)
-                else:
-                    sis.create_student(student_id, name, age, gender, course, year_level)
+            if confirm == QtWidgets.QMessageBox.Yes:
 
-        elif choice == "2":
-            student_id = input("Enter Student ID: ")
-            sis.read_student(student_id)
-
-        elif choice == "3":
-            student_id = input("Enter Student ID: ")
-            year = input("Enter Year Level: ")
-            course = input("Enter new course: ")
-            sis.update_student(student_id, year, course)
-            print("Student information updated successfully.")
-
-        elif choice == "4":
-            student_id = input("Enter Student ID: ")
-            sis.delete_student(student_id)
-            print("Student information deleted successfully.")
-
-        elif choice == "5":
-            print("List of students: ")
-            sis.list_students()
-
-        elif choice == "6":
-            course_code = input("Enter Course Code: ")
-            course_name = input("Enter Course Name: ")
-            if course_check.is_duplicate_course(course_code):
-                print(f"Course {course_code} - {course_name} already exists.")
-            else:
-                course_check.add_course(course_code, course_name)
-                print("Course added successfully")
-
-        elif choice == "7":
-            course_code = input("Enter Course Code: ")
-            if course_check.valid_course(course_code):
-                print(f"Are you sure to delete Course {course_code}")
-                valid = input("Enter 'Yes' to delete. Enter any key to cancel: ")
-                if valid == "Yes":
-                    course_check.delete_course(course_code)
-                else:
-                    print("Course not deleted.")
-            else:
-                print("Please enter a valid course code.")
-
-        elif choice == "8":
-            exit()
+                del student[studentID]
+                self.parent.update_csvfile(filename)
+                self.accept()
 
         else:
-            print("Please enter a valid choice.")
-
-        sis.update_csvfile(filename)
+            QtWidgets.QMessageBox.warning(self, 'Student Not Found', f"Student {studentID} does not exist.")
 
 
 if __name__ == "__main__":
-    main()
+    app = QtWidgets.QApplication([])
+    window = Ui()
+    app.exec_()
