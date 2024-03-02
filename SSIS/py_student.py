@@ -18,10 +18,16 @@ class Ui(QtWidgets.QMainWindow):
         uic.loadUi('mainwindow_ui.ui', self)
         self.show()
         self.load_csvfile(filename)
+
         self.addStudent = self.findChild(QtWidgets.QPushButton, 'addStudent')
         self.addStudent.clicked.connect(self.open_add_student_dialog)
+
         self.deleteStudent = self.findChild(QtWidgets.QPushButton, 'deleteStudent')
         self.deleteStudent.clicked.connect(self.open_delete_student_dialog)
+
+        self.editStudent = self.findChild(QtWidgets.QPushButton, 'editStudent')
+        self.editStudent.clicked.connect(self.open_edit_student_dialog)
+
         self.refreshButton = self.findChild(QtWidgets.QPushButton, 'reloadButton')
         self.refreshButton.clicked.connect(self.refresh_student_tree)
         self.studentTree = self.findChild(QtWidgets.QTreeWidget, 'studentTree')
@@ -35,6 +41,11 @@ class Ui(QtWidgets.QMainWindow):
         self.delete_student_dialog = DeleteStudentDialog(self)
         self.delete_student_dialog.accepted.connect(self.refresh_student_tree)
         self.delete_student_dialog.exec_()
+
+    def open_edit_student_dialog(self):
+        self.edit_student_dialog = EditDialog(self)
+        self.edit_student_dialog.accepted.connect(self.refresh_student_tree)
+        self.edit_student_dialog.exec_()
 
     def load_csvfile(self, filename):
         global student
@@ -150,6 +161,52 @@ class DeleteStudentDialog(QtWidgets.QDialog):
 
         else:
             QtWidgets.QMessageBox.warning(self, 'Student Not Found', f"Student {studentID} does not exist.")
+
+
+class EditDialog(QtWidgets.QDialog):
+    def __init__(self, parent):
+        super(EditDialog, self).__init__(parent)
+        uic.loadUi('editstudent_ui.ui', self)
+        self.parent = parent
+        self.load_course_codes()
+        self.find = self.findChild(QtWidgets.QPushButton, 'findStudent')
+        self.editConfirm = self.findChild(QtWidgets.QPushButton, 'editStudent_confirm')
+        self.editCancel = self.findChild(QtWidgets.QPushButton, 'editStudent_cancel')
+        self.findStudent.clicked.connect(self.find_student)
+        self.editConfirm.clicked.connect(self.edit_student)
+        self.editCancel.clicked.connect(self.reject)
+
+
+    def find_student(self):
+        studentID = self.studentIDField.text()
+    def edit_student(self):
+        global student
+
+
+        if studentID in student:
+            course = self.courseComboBox.currentText()
+            yearLevel = str(self.yearSpinBox.value())
+
+            # Update student information
+            student[studentID]['Course'] = course
+            student[studentID]['Year_Level'] = yearLevel
+
+            # Update CSV file
+            self.parent.update_csvfile(filename)
+
+            # Close dialog
+            self.accept()
+        else:
+            QtWidgets.QMessageBox.warning(self, 'Student Not Found', f"Student {studentID} does not exist.")
+
+    def load_course_codes(self):
+        course_filename = "course_csv.csv"
+        if os.path.exists(course_filename):
+            with open(course_filename, mode='r') as file:
+                reader = csv.reader(file)
+                next(reader)
+                course_codes = [row[0] for row in reader]
+                self.courseComboBox.addItems(course_codes)
 
 
 if __name__ == "__main__":
