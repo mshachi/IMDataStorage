@@ -1,11 +1,9 @@
-Course_Name,Course_Code
-Bachelor of Science in Computer Applications,BSCA
-Bachelor of Science in Information Systems,BSIS
-Bachelor of Science in Information Technology,BSIT
-Bachelor of Science in Computer Science,BSCS
-Bachelor of Science in Civil Engineering,BSCE
-Bachelor of Science in Chemical Engineering,BSChe
-Bachelor of Science in Computer Engineering,BSCpE
-Bachelor of Science in Accountancy,BSA
-Bachelor of Science in Economics,BSEcon
-
+Course_Code,Course_Name
+BSCA,Bachelor of Science in Computer Applications
+BSIS,Bachelor of Science in Information Systems
+BSIT,Bachelor of Science in Information Technology
+BSCS,Bachelor of Science in Computer Science
+BSCE,Bachelor of Science in Civil Engineering
+BSChe,Bachelor of Science in Chemical Engineering
+BSA,Bachelor of Science in Accountancy
+BSEcon,Bachelor of Science in Economics
