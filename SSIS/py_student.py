@@ -166,7 +166,7 @@ class Ui(QtWidgets.QMainWindow):
                 reader = csv.reader(file)
                 next(reader)  # Skip header
                 for row in reader:
-                    course_codes.append(row[1])  # Assuming course code is in the first column
+                    course_codes.append(row[0])  # Assuming course code is in the first column
         return course_codes
 
     def load_student_csvfile(self, filename):
@@ -301,7 +301,7 @@ class AddStudentDialog(QtWidgets.QDialog):
             with open(course_filename, mode='r') as file:
                 reader = csv.reader(file)
                 next(reader)
-                course_codes = [row[1] for row in reader]
+                course_codes = [row[0] for row in reader]
                 self.courseComboBox.addItems(course_codes)
 
     def get_gender(self):
