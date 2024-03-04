@@ -10,7 +10,6 @@ class CourseCSV:
     def __init__(self, filename):
         self.courses = {}
         self.filename = filename
-        self.valid = False
 
     def add_course(self, course_code, course_name):
         self.courses = {'Course_Code': course_code, 'Course_Name': course_name}
@@ -24,20 +23,25 @@ class CourseCSV:
                 writer.writerow(self.courses)
 
     def delete_course(self, course_code):
+        courses = []
         with open(self.filename, mode='r') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if row[0] == course_code:
-                    del row
-                    break
+                if not row['Course_Code'] == course_code:
+                    courses.append(row)
+        with open(self.filename, mode='w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=course_fieldnames)
+            writer.writeheader()
+            writer.writerows(courses)
 
     def valid_course(self, course_code):
         with open(self.filename, mode='r') as file:
-            reader = csv.reader(file)
+            reader = csv.DictReader(file)
             for row in reader:
-                if row[0] == course_code:
-                    self.valid = True
-                    
+                if row['Course_Code'] == course_code:
+                    return True
+        return False
+
     def is_duplicate_course(self, course_code):
         with open(self.filename, mode='r') as file:
             reader = csv.DictReader(file)
@@ -45,3 +49,13 @@ class CourseCSV:
                 if row['Course_Code'] == course_code:
                     return True
         return False
+
+    def get_deleted_course(self):
+        # Get list of deleted course codes
+        deleted_courses = set()
+        with open(self.filename, mode='r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                deleted_courses.add(row['Course_Code'])
+
+        return deleted_courses
