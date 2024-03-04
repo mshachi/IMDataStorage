@@ -1,11 +1,11 @@
-Course Code, Course Name
-BSCS, Bachelor of Science in Computer Science
-BSIT, Bachelor of Science in Information Technology
-BSCA, Bachelor of Science in Computer Applications
-BSIS, Bachelor of Science in Information Systems
-BSCE, Bachelor of Science in Civil Engineering
-BSChe, Bachelor of Science in Chemical Engineering
-BSCpE, Bachelor of Science in Computer Engineering
-BSA, Bachelor of Science in Accountancy
-BSEcon, Bachelor of Science in Economics
-AB SOCIOLOGY, Bachelor of Arts in Sociology
+Course_Name,Course_Code
+Bachelor of Science in Computer Applications,BSCA
+Bachelor of Science in Information Systems,BSIS
+Bachelor of Science in Information Technology,BSIT
+Bachelor of Science in Computer Science,BSCS
+Bachelor of Science in Civil Engineering,BSCE
+Bachelor of Science in Chemical Engineering,BSChe
+Bachelor of Science in Computer Engineering,BSCpE
+Bachelor of Science in Accountancy,BSA
+Bachelor of Science in Economics,BSEcon
+
