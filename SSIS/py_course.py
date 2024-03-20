@@ -22,6 +22,21 @@ class CourseCSV:
                 writer = csv.writer(csvfile, fieldnames=course_fieldnames)
                 writer.writerow(self.courses)
 
+    def edit_course(self, old_course_code, new_course_code, new_course_name):
+        courses = []
+        with open(self.filename, mode='r', newline='') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row['Course_Code'] == old_course_code:
+                    row['Course_Code'] = new_course_code
+                    row['Course_Name'] = new_course_name
+                courses.append(row)
+
+        with open(self.filename, mode='w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=course_fieldnames)
+            writer.writeheader()
+            writer.writerows(courses)
+
     def delete_course(self, course_code):
         courses = []
         with open(self.filename, mode='r') as file:
