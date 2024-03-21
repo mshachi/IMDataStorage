@@ -297,6 +297,7 @@ class Ui(QtWidgets.QMainWindow):
         if not item:
             self.courseTree.clearSelection()
 
+
 # AddStudentDialog class for adding a new student
 class AddStudentDialog(QtWidgets.QDialog):
     def __init__(self, parent):
@@ -310,19 +311,41 @@ class AddStudentDialog(QtWidgets.QDialog):
 
     def add_student(self):
         global student
-        studentID = self.addIDNumField.text()
-        name = self.addNameField.text()
-        age = str(self.ageSpinBox.value())
-        gender = self.get_gender()
-        course = self.get_course()
-        yearLevel = str(self.yearSpinBox.value())
 
-        if studentID in student: # checking if the input student id number already exists in the list of students (from student csv file)
+        # check if the name field is empty
+        if self.addNameField.text() != "":
+            name = self.addNameField.text()
+        else:
+            QtWidgets.QMessageBox.warning(self, "Empty Name", "Please enter student name.")
+            return
+
+        # retrieve valid ID Number
+        year = self.addIDNumField_Year.text()
+        number = self.addIDNumField_Number.text()
+        if year.isdigit() and number.isdigit() and len(year) == 4 and len(number) == 4:
+            studentID = "-".join([year, number])
+        else:
+            QtWidgets.QMessageBox.warning(self, "Invalid ID Number", "Please enter a valid ID Number")
+            return
+
+        # check if the student with the input ID already exists
+        if studentID in student:
             QtWidgets.QMessageBox.warning(self, "Duplicate Student ID", f"Student with ID {studentID} already exists.")
             return
 
+        # check if there is a selected gender
+        if self.get_gender() != "":
+            gender = self.get_gender()
+        else:
+            QtWidgets.QMessageBox.warning(self, "No Gender Selected", "Please select student gender.")
+            return
+
+        age = str(self.ageSpinBox.value())
+        course = self.get_course()
+        yearLevel = str(self.yearSpinBox.value())
+
         student_data = {'Student_ID': studentID, 'Name': name, 'Age': age,
-                        'Gender': gender, 'Course': course, 'Year_Level': yearLevel} 
+                        'Gender': gender, 'Course': course, 'Year_Level': yearLevel}
 
         student[studentID] = student_data
         self.parent.update_student_csvfile(student_filename)
@@ -331,7 +354,6 @@ class AddStudentDialog(QtWidgets.QDialog):
     def get_course(self):
         return self.courseComboBox.currentText()
 
-    # loading course codes from course CSV file for the combobox 
     def load_course_codes(self):
         course_filename = "course_csv.csv"
         if os.path.exists(course_filename):
@@ -341,14 +363,12 @@ class AddStudentDialog(QtWidgets.QDialog):
                 course_codes = [row[0] for row in reader]
                 self.courseComboBox.addItems(course_codes)
 
-    # retrieving gender from the checked gender radio button
     def get_gender(self):
         if self.maleRadBut.isChecked():
             return "Male"
         elif self.femaleRadBut.isChecked():
             return "Female"
         else:
-            print("Error: No gender selected.")
             return ""
 
 
